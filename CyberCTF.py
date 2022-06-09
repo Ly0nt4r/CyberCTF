@@ -66,34 +66,33 @@ def portsEnumerationTCP():
 			lport = nm[host][proto].keys()
 			sorted(lport)
 		for port in lport:
-			print ('port: %s\tstate: %s \t\t | ' % (port, nm[host][proto][port]['state']))
+			print ('port: %s --> %s   | ' % (port, nm[host][proto][port]['state']),end=" ")
+			print (scanVulnerability(port))
 	except:
 		print ("[/!\] CAN'T CONNECT WITH THE HOST [/!\]")
 		exit(1)
 
-def scanVulnerability(port):
+def scanVulnerability(port): #need finish this
 	match port:
 		case 21:
-			return "[!] FTP PORT: [!]"
-		case 80,443,8080:
+			return "[!] FTP PORT: VERIFY ANONYMOUS ACCESS [!]"
+		case 80 | 8080 | 443:
 			return "[!] HTTP/S PORT:  SHOULD FUZZING (SUBDOMAIN's AND DIRECTORY's) & VISUALIZE VERSIONS [!]"
 		case 23:
-			return "[!] TELNET PORT: [!]"
-		case 25, 465, 587:
+			return "[!] TELNET PORT:  -- EXECUTE --> \"nc -vn %s 23\" [!] " % (args.ip)
+		case 25 | 465 | 587:
 			return "[!] SMTP PORT: [!]"
-		case 110, 995:
+		case 110 | 995:
 			return "[!] POP3 PORT:  [!]" 
-		case 135, 593:
+		case 135 | 593:
 			return "[!] MSRPC PORT: [!]"
-		case 139, 445:
-			return "[!] SMB PORT: [!]"
-		case 143, 993:
+		case 139 | 445:
+			return "[!] SMB PORT: ¡TRY TO GET CREDENTIALS! -- TOOLS: \n\t [*] SMBCLIENT: smbclient  -U 'username[%passwd]' -L <IP> [!] \n\t [*] SMBMAP: smbmap -u 'username' -p 'password' -H <IP> [-P <PORT>] "
+		case 143 | 993:
 			return "[!] IMAP PORT: [!]"
-		case 161, 162, 10161, 10162:
-			return "[!] SNMP PORT: [!]"
+		case 161 | 162 | 10161 | 10162:
+			return "[!] SNMP PORT: -- EXECUTE --> \"snmpbulkwalk -c <public | private> -v 2c %s \" [!]" % (args.ip)
 
 if __name__=="__main__":
 	banner()
 	portsEnumerationTCP()
-
-
