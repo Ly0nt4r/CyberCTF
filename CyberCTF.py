@@ -5,12 +5,13 @@ import time
 from pwn import *
 import argparse
 import nmap
-import colorama
-from colorama import Fore, Style
+from tqdm import tqdm
+import urllib.request
 
 parser = argparse.ArgumentParser()
 requiredNamed = parser.add_argument_group('Required named arguments')
-parser.add_argument("-w","--wordlists", help="Wordlist's Fuzzing")
+parser.add_argument("-wd", "--WDir", help="Fuzzing Wordlists Directory")
+parser.add_argument("-ws","--WSub", help="Fuzzing Wordlists Subdomains")
 requiredNamed.add_argument("-i","--ip", help="Option to put the ip", required=True)
 parser.add_argument("-f","--fuzz", help="Usage fuzz", action='store_true')
 parser.add_argument("-v","--verbose", help="Verbose", action='store_true')
@@ -93,19 +94,23 @@ def scanVulnerability(port):
 
 def fuzzing():
 	print("---------------------------------------------------------------------------")
-	p3=log.progress("Init fuzzing web")
-
+	p3=log.progress("Init Fuzzing Web")
 	try:
-		with open(args.wordlists,'r') as file:
-			line=file.readlines()
-			if args.verbose == True:
-				print(line)	
-		file.close()			
+		if args.WDir == None and args.WSub == None:
+			p3.status ("Wordlists not found's")
+			print ('\x1b[1;37;41m'+"You must add wordlists"+ '\x1b[0m'+ '\x1b[1;32;40m' +" ::  -ws/-wd < PATH/Wordlists.txt > :: "+ '\x1b[0m')
+		if args.verbose == True:  #Active verbose mode
+			p4=log.progress("Testing directory with")
+			with open(args.WDir) as file:
+				for line in file:
+					print (urllib.request.urlopen("http://127.0.0.1/line").getcode())  #testing (?) funcional
+					# print ("http://%s/%s" % (args.ip,line))
+					p4.status(line)
+		p3.status("Success")
 	except:
-		print (args.wordlists)
-		if args.wordlists == None:
-			p3.status("You must add wordlists -->  -w < PATH/wordlistsExample.txt >")
-		p3.status("Failed fuzz... ¿Port(s) HTTP(s) is active?")
+		p3.status("Failed")
+		print ("[*]   ¿Port(s) HTTP(s) is active?")
+		print ("[*]   ¿PATH or NAME wordlists is correct?")
 
 if __name__=="__main__":
 	banner()
