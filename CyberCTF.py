@@ -8,13 +8,13 @@ import nmap
 from tqdm import tqdm
 import urllib.request
 
+
 parser = argparse.ArgumentParser()
 requiredNamed = parser.add_argument_group('Required named arguments')
 parser.add_argument("-wd", "--WDir", help="Fuzzing Wordlists Directory")
 parser.add_argument("-ws","--WSub", help="Fuzzing Wordlists Subdomains")
 requiredNamed.add_argument("-i","--ip", help="Option to put the ip", required=True)
 parser.add_argument("-f","--fuzz", help="Usage fuzz", action='store_true')
-parser.add_argument("-v","--verbose", help="Verbose", action='store_true')
 parser.parse_args()
 args=parser.parse_args()
 
@@ -34,8 +34,15 @@ def banner():
 
 def portsEnumerationUDP():
 	try:
+
+		print ("===================================================================")
+		print ("                     Ports Discovery - UDP                         ")
+		print ("===================================================================")
+
+
 		nmU= nmap.PortScanner()
-		nmU.scan(hosts=args.ip, arguments="-sU -n --top-ports 300 -T5")
+		nmU.scan(hosts=args.ip, arguments="-sU --open -n --top-ports 300 -T5")
+		
 		for host in nm.all_hosts():
 			print('----------------------------------------------------')
 			print('Host : %s (%s)' % (host, nmU[host].hostname()))
@@ -48,14 +55,20 @@ def portsEnumerationUDP():
 		for port in lport:
 			print ('port: %s\tstate: %s' % (port, nmU[host][proto][port]['state']))
 	except:
-		exit(1)
+		print ("NO UDP ports open")
 
 def portsEnumerationTCP():
 
 	try:
+
+		print ("===================================================================")
+		print ("                      Ports Discovery - TCP                        ")
+		print ("===================================================================")
+
+
 		p2=log.progress("Scanning ports...")
-		nm = nmap.PortScanner() 
-		nm.scan(hosts=args.ip, arguments="-Pn -n --min-rate 5000 ")
+		nm = nmap.PortScanner()
+		nm.scan(hosts=args.ip, arguments="-Pn -n --min-rate 5000 --open")
 		for host in nm.all_hosts(): # for hosts
 			print('----------------------------------------------------')
 			print('Host : %s (%s)' % (host, nm[host].hostname()))
@@ -66,46 +79,39 @@ def portsEnumerationTCP():
 			lport = nm[host][proto].keys()
 			sorted(lport)
 		for port in lport: # for ports
-			print ('port: %s --> %s   | ' % (port, nm[host][proto][port]['state']),end=" ")
-			print (scanVulnerability(port))
+			print ('port: %s --> %s ' % (port, nm[host][proto][port]['state']))
+		p2.status("Finished")
 	except:
 		p2=log.progress("Failed scan")
 		exit(1)
 
-def scanVulnerability(port): 
-	##
-	## Ports with commons vulnerability
-	##
-	match port:
-		case 21:
-			return "[!] FTP PORT: VERIFY ANONYMOUS ACCESS [!]"
-		case 80 | 8080 | 443:
-			return "[!] HTTP/S PORT:  SHOULD FUZZING (SUBDOMAIN's AND DIRECTORY's) & VISUALIZE VERSIONS [!]"
-		case 23:
-			return "[!] TELNET PORT:  -- EXECUTE --> \"nc -vn %s 23\" [!] " % (args.ip)
-		case 25 | 465 | 587:
-			return "[!] SMTP PORT: -- EXECUTE --> \"nc -vn %s <port> \" [!]" % (args.ip)
-		case 135 | 593:
-			return "[!] MSRPC PORT: YOU SHOULD TRY RPCDUMP \n[*] rpcdump [-p port] %s" % (args.ip)
-		case 139 | 445:
-			return "[!] SMB PORT: ¡TRY TO GET CREDENTIALS (you can see without it)! -- TOOLS: \n\t [*] SMBCLIENT: smbclient  -U 'username[%passwd]' -L <IP> [!] \n\t [*] SMBMAP: smbmap -u 'username' -p 'password' -H <IP> [-P <PORT>] "
-		case 161 | 162 | 10161 | 10162:
-			return "[!] SNMP PORT: -- EXECUTE --> \"snmpbulkwalk -c <public | private> -v 2c %s \" [!]" % (args.ip)
 
 def fuzzing():
-	print("---------------------------------------------------------------------------")
-	p3=log.progress("Init Fuzzing Web")
+	print("")
+	file = 'directory-list-2.3-medium.txt'
+	exist=False
+
+	print ("===================================================================")
+	print ("                     	  FUZZING 		                   ")
+	print ("===================================================================")
+
+#	for root, dirs, files in os.walk('/usr/share/'):  
+#		if file in files:
+#			exist=True
+#			print (os.path.dirname(file))
+
+	p3=log.progress("Fuzzing Web")
+	p3.status("In Process")
+	
 	try:
-		if args.WDir == None and args.WSub == None:
+		if args.WDir == None:
 			p3.status ("Wordlists not found's")
-			print ('\x1b[1;37;41m'+"You must add wordlists"+ '\x1b[0m'+ '\x1b[1;32;40m' +" ::  -ws/-wd < PATH/Wordlists.txt > :: "+ '\x1b[0m')
-		if args.verbose == True:  #Active verbose mode
-			p4=log.progress("Testing directory with")
-			with open(args.WDir) as file:
-				for line in file:
-					print (urllib.request.urlopen("http://127.0.0.1/line").getcode())  #testing (?) funcional
-					# print ("http://%s/%s" % (args.ip,line))
-					p4.status(line)
+			print ('\x1b[1;37;41m'+"You must add wordlists"+ '\x1b[0m'+ '\x1b[1;32;40m' +" ::  -wd <Wordlists.txt> :: "+ '\x1b[0m')
+		p6=log.progress("Testing directory with")
+		with open(args.WDir) as file:
+			for line in file:
+				p6.status(line)
+		
 		p3.status("Success")
 	except:
 		p3.status("Failed")
@@ -115,6 +121,5 @@ def fuzzing():
 if __name__=="__main__":
 	banner()
 	portsEnumerationTCP()
-	if args.fuzz == True:
-		fuzzing()		
-			
+#	portsEnumerationUDP()
+	fuzzing()
