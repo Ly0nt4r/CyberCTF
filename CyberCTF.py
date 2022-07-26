@@ -7,36 +7,52 @@ import argparse
 import nmap
 from tqdm import tqdm
 import urllib.request
-
+import os.path
+from progress.bar import FillingCirclesBar 
 
 parser = argparse.ArgumentParser()
 requiredNamed = parser.add_argument_group('Required named arguments')
 parser.add_argument("-wd", "--WDir", help="Fuzzing Wordlists Directory")
-parser.add_argument("-ws","--WSub", help="Fuzzing Wordlists Subdomains")
+parser.add_argument("-I","--interactive", help="Mode interactive (Automatic scanning)", action="store_false")
 requiredNamed.add_argument("-i","--ip", help="Option to put the ip", required=True)
 parser.add_argument("-f","--fuzz", help="Usage fuzz", action='store_true')
 parser.parse_args()
 args=parser.parse_args()
 
+class style(): # colors
+    BLACK = '\033[30m'
+    RED = '\033[31m'
+    GREEN = '\033[32m'
+    YELLOW = '\033[33m'
+    BLUE = '\033[34m'
+    MAGENTA = '\033[35m'
+    CYAN = '\033[36m'
+    WHITE = '\033[37m'
+    UNDERLINE = '\033[4m'
+    RESET = '\033[0m'
+    ITALIC='\x1B[3m'
+    RES='\x1B[0m'
+    BOLD='\033[1m'
+
 def banner():
 
-	print ('''
+	print (style.RED+'''
 	 ██████╗██╗   ██╗██████╗ ███████╗██████╗      ██████╗████████╗███████╗
 	██╔════╝╚██╗ ██╔╝██╔══██╗██╔════╝██╔══██╗    ██╔════╝╚══██╔══╝██╔════╝
 	██║      ╚████╔╝ ██████╔╝█████╗  ██████╔╝    ██║        ██║   █████╗
 	██║       ╚██╔╝  ██╔══██╗██╔══╝  ██╔══██╗    ██║        ██║   ██╔══╝
 	╚██████╗   ██║   ██████╔╝███████╗██║  ██║    ╚██████╗   ██║   ██║
 	 ╚═════╝   ╚═╝   ╚═════╝ ╚══════╝╚═╝  ╚═╝     ╚═════╝   ╚═╝   ╚═╝
-					author: @Lyont4R | CyberCTF v1.0.1
-	----------------------------------------------------------------------
-	''')
+	'''+style.YELLOW+'''				author: @Lyont4R | CyberCTF v1.0.1
+	'''+style.BLUE+'''----------------------------------------------------------------------
+	'''+style.RESET)
 
 
 def portsEnumerationUDP():
 	try:
 
 		print ("===================================================================")
-		print ("                     Ports Discovery - UDP                         ")
+		print (style.MAGENTA+style.BOLD+"                     Ports Discovery - UDP                         "+style.RESET)
 		print ("===================================================================")
 
 
@@ -45,15 +61,15 @@ def portsEnumerationUDP():
 		
 		for host in nm.all_hosts():
 			print('----------------------------------------------------')
-			print('Host : %s (%s)' % (host, nmU[host].hostname()))
-			print('State : %s' % nmU[host].state())
+			print(style.GREEN+'Host: '+ style.RESET + '%s (%s)' % (host, nmU[host].hostname()))
+			print(style.GREEN+'State: '+ style.RESET + '%s' % nmU[host].state())
 		for proto in nmU[host].all_protocols():
 			print('----------')
-			print('Protocol : %s' % proto)
+			print(style.GREEN+'Protocol:'+ style.RESET + ' %s' % proto)
 			lport = nmU[host][proto].keys()
 			sorted(lport)
 		for port in lport:
-			print ('port: %s\tstate: %s' % (port, nmU[host][proto][port]['state']))
+			print (style.GREEN+'port: '+ style.RESET + '%s\t'+style.GREEN+'state: '+ style.RESET + ' %s' % (port, nmU[host][proto][port]['state']))
 	except:
 		print ("NO UDP ports open")
 
@@ -62,24 +78,24 @@ def portsEnumerationTCP():
 	try:
 
 		print ("===================================================================")
-		print ("                      Ports Discovery - TCP                        ")
+		print (style.MAGENTA+style.BOLD+"                      Ports Discovery - TCP                        "+style.RESET)
 		print ("===================================================================")
 
 
-		p2=log.progress("Scanning ports...")
+		p2=log.progress(style.CYAN+"Scanning ports..."+style.RESET)
 		nm = nmap.PortScanner()
 		nm.scan(hosts=args.ip, arguments="-Pn -n --min-rate 5000 --open")
 		for host in nm.all_hosts(): # for hosts
 			print('----------------------------------------------------')
-			print('Host : %s (%s)' % (host, nm[host].hostname()))
-			print('State : %s' % nm[host].state())
+			print(style.GREEN+'Host: '+ style.RESET + '%s (%s)' % (host, nm[host].hostname()))
+			print(style.GREEN+'State: '+ style.RESET + '%s' % nm[host].state())
 		for proto in nm[host].all_protocols(): # for protocols 
 			print('----------')
-			print('Protocol : %s' % proto)
+			print(style.GREEN+'Protocol:'+ style.RESET + ' %s' % proto)
 			lport = nm[host][proto].keys()
 			sorted(lport)
 		for port in lport: # for ports
-			print ('port: %s --> %s ' % (port, nm[host][proto][port]['state']))
+			print (style.GREEN+'port: '+ style.RESET + style.RESET + '%s --> %s ' % (port,nm[host][proto][port]['state']))
 		p2.status("Finished")
 	except:
 		p2=log.progress("Failed scan")
@@ -92,25 +108,29 @@ def fuzzing():
 	exist=False
 
 	print ("===================================================================")
-	print ("                     	  FUZZING 		                   ")
+	print (style.MAGENTA+style.BOLD+"                     	  FUZZING 		                   "+style.RESET)
 	print ("===================================================================")
+ 
+	existPath=os.path.exists(file)
 
-#	for root, dirs, files in os.walk('/usr/share/'):  
-#		if file in files:
-#			exist=True
-#			print (os.path.dirname(file))
-
-	p3=log.progress("Fuzzing Web")
+	p3=log.progress(style.CYAN+"Fuzzing Web"+style.RESET)
 	p3.status("In Process")
 	
 	try:
-		if args.WDir == None:
-			p3.status ("Wordlists not found's")
-			print ('\x1b[1;37;41m'+"You must add wordlists"+ '\x1b[0m'+ '\x1b[1;32;40m' +" ::  -wd <Wordlists.txt> :: "+ '\x1b[0m')
-		p6=log.progress("Testing directory with")
-		with open(args.WDir) as file:
-			for line in file:
-				p6.status(line)
+
+		bar = FillingCirclesBar(' Processing... ', max=800)
+
+
+		#	p3.status ("Wordlists not found's")
+		#	exit(1)
+		p6=log.progress(style.CYAN+"Testing directory with"+style.RESET)
+		with open(file) as files:
+			for line in files:
+				p6.status(args.ip+"/"+line)
+				time.sleep(.2)
+				bar.next()
+			bar.finish()
+
 		
 		p3.status("Success")
 	except:
@@ -121,5 +141,5 @@ def fuzzing():
 if __name__=="__main__":
 	banner()
 	portsEnumerationTCP()
-#	portsEnumerationUDP()
+	portsEnumerationUDP()
 	fuzzing()
