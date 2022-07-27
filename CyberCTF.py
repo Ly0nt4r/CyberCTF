@@ -8,7 +8,12 @@ import nmap
 from tqdm import tqdm
 import urllib.request
 import os.path
-from progress.bar import FillingCirclesBar 
+from progress.bar import Bar
+import requests
+import threading 
+import keyboard
+
+
 
 parser = argparse.ArgumentParser()
 requiredNamed = parser.add_argument_group('Required named arguments')
@@ -115,23 +120,35 @@ def fuzzing():
 
 	p3=log.progress(style.CYAN+"Fuzzing Web"+style.RESET)
 	p3.status("In Process")
+
 	
 	try:
+		fileSize= open(file, 'r')
+		size=len(fileSize.readlines())
+		fileSize.close()
 
-		bar = FillingCirclesBar(' Processing... ', max=800)
-
+		bar = Bar('Processing: ', max=size)
 
 		#	p3.status ("Wordlists not found's")
 		#	exit(1)
 		p6=log.progress(style.CYAN+"Testing directory with"+style.RESET)
 		with open(file) as files:
-			for line in files:
-				p6.status(args.ip+"/"+line)
-				time.sleep(.2)
-				bar.next()
-			bar.finish()
+			try:
+				for line in files:
+					p6.status(args.ip+"/"+line) #printing result
+					time.sleep(.2)
+					r = requests.get("http://"+args.ip+"/"+line) #request
+					if r.status_code == 200:
+						print ("["+style.YELLOW  + "FOUND" + style.RESET+"]"+style.GREEN+ " %s -->" % (r.status_code) + style.RESET+ " %s " % (line))
+					elif r.status_code == 301 or r.status_code == 302:
+						print ("["+style.YELLOW  + "FOUND" + style.RESET+"]"+style.BLUE+ " %s --> " % (r.status_code) + style.RESET+ " %s " % (line))
+					elif r.status_code == 500:
+						print ("["+style.YELLOW  + "FOUND" + style.RESET+"]"+style.YELLOW+ " %s -->" % (r.status_code) + style.RESET+ " %s " % (line))
+			except KeyboardInterrupt:
+    				pass
 
-		
+				#bar.next()
+			#bar.finish()
 		p3.status("Success")
 	except:
 		p3.status("Failed")
